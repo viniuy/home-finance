@@ -31,7 +31,7 @@ export default function AuthPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const logoRef      = useRef<HTMLDivElement>(null)
   const cardRef      = useRef<HTMLDivElement>(null)
-  const fieldsRef    = useRef<HTMLDivElement>(null)
+  const fieldsRef    = useRef<HTMLFormElement>(null)
   const scanRef      = useRef<HTMLDivElement>(null)
   const btnRef       = useRef<HTMLButtonElement>(null)
 
@@ -125,7 +125,7 @@ export default function AuthPage() {
             <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-brand/60" />
           </div>
           <div className="text-center">
-            <h1 className="text-[1.3rem] font-bold text-text tracking-[0.06em] uppercase">Kasambahay</h1>
+            <h1 className="text-[1.3rem] font-bold text-text tracking-[0.06em] uppercase">Mikay Pay Later</h1>
             <p className="text-[0.7rem] text-text-faint mt-1 tracking-[0.2em] uppercase">
               Family Finance Tracker
             </p>

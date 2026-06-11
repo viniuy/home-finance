@@ -62,12 +62,12 @@ export function useMonths() {
           sb.from('monthly_expenses').select('amount').eq('month_id', prevMonth.id).not('amount', 'is', null),
           sb.from('misc_expenses')   .select('amount').eq('month_id', prevMonth.id),
         ])
-        const prevIncome = (incRes.data ?? []).reduce((s, r) => s + r.amount, 0) + prevMonth.rollover_amount
+        const prevIncome = (incRes.data ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0) + prevMonth.rollover_amount
         const prevSpend  = [
           ...(billRes.data ?? []),
           ...(expRes.data  ?? []),
           ...(miscRes.data ?? []),
-        ].reduce((s, r) => s + (r.amount ?? 0), 0)
+        ].reduce((s: number, r: { amount: number | null }) => s + (r.amount ?? 0), 0)
         const prevSavings = prevIncome - prevSpend
         if (prevSavings > 0) {
           await sb.from('months').update({ rollover_amount: prevSavings }).eq('id', newMonth.id)
@@ -94,7 +94,7 @@ export function useMonths() {
       .from('bill_templates').select('*').eq('is_active', true).order('sort_order')
     if (bills && bills.length > 0) {
       await sb.from('monthly_bills').insert(
-        bills.map(b => ({
+        bills.map((b: { id: string; name: string; default_amount: number; is_variable: boolean; sort_order: number }) => ({
           month_id:    newMonth.id,
           template_id: b.id,
           name:        b.name,
@@ -111,7 +111,7 @@ export function useMonths() {
       .from('monthly_expense_templates').select('*').eq('is_active', true).order('sort_order')
     if (expTemplates && expTemplates.length > 0) {
       await sb.from('monthly_expenses').insert(
-        expTemplates.map(t => ({
+        expTemplates.map((t: { id: string; name: string; sort_order: number }) => ({
           month_id:    newMonth.id,
           template_id: t.id,
           name:        t.name,

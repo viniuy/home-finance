@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
-import type { Session } from '@supabase/supabase-js'
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null)
@@ -10,11 +10,11 @@ export function useAuth() {
   const router = useRouter()
 
   useEffect(() => {
-    getSupabase().auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+    getSupabase().auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      setSession(data.session)
       setLoading(false)
     })
-    const { data: { subscription } } = getSupabase().auth.onAuthStateChange((_e, s) => {
+    const { data: { subscription } } = getSupabase().auth.onAuthStateChange((_e: AuthChangeEvent, s: Session | null) => {
       setSession(s)
       if (!s) router.push('/auth')
     })

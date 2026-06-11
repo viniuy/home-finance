@@ -130,7 +130,7 @@ export default function DashboardPage() {
                 <span className="absolute -bottom-px -right-px w-1.5 h-1.5 border-b border-r border-brand/50" />
               </div>
               <span className="text-[0.75rem] font-bold text-text tracking-[0.1em] uppercase hidden sm:block">
-                Kasambahay
+                Mikay Pay Later
               </span>
             </div>
 
