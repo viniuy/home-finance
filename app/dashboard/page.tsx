@@ -8,17 +8,18 @@ import { useMonths } from '@/hooks/UseMonths'
 import { useMonthData } from '@/hooks/useMonthData'
 import { useTheme } from '@/components/ThemeProvider'
 import { getCurrentYearMonth } from '@/lib/utils'
-
-import { SummaryBar }              from '@/components/dashboard/SummaryBar'
-import { MonthNav }                from '@/components/dashboard/MonthNav'
-import { IncomeSection }           from '@/components/dashboard/IncomeSection'
-import { BillsSection }            from '@/components/dashboard/BillsSection'
-import { MonthlyExpensesSection }  from '@/components/dashboard/MonthlyExpensesSection'
-import { MiscExpensesSection }     from '@/components/dashboard/MiscExpensesSection'
-import { CreateMonthModal }        from '@/components/dashboard/CreateMonthModal'
-import { SettingsPanel }           from '@/components/dashboard/SettingsPanel'
-import { SummaryTab }              from '@/components/dashboard/SummaryTab'
-import type { IncomeOverride }     from '@/hooks/UseMonths'
+import { SummaryBar }             from '@/components/dashboard/SummaryBar'
+import { MonthNav }               from '@/components/dashboard/MonthNav'
+import { IncomeSection }          from '@/components/dashboard/IncomeSection'
+import { BillsSection }           from '@/components/dashboard/BillsSection'
+import { MonthlyExpensesSection } from '@/components/dashboard/MonthlyExpensesSection'
+import { MiscExpensesSection }    from '@/components/dashboard/MiscExpensesSection'
+import { CreateMonthModal }       from '@/components/dashboard/CreateMonthModal'
+import { ResetMonthModal }        from '@/components/dashboard/ResetMonthModal'
+import { DeleteMonthModal }       from '@/components/dashboard/DeleteMonthModal'
+import { SettingsPanel }          from '@/components/dashboard/SettingsPanel'
+import { SummaryTab }             from '@/components/dashboard/SummaryTab'
+import type { IncomeOverride }    from '@/hooks/UseMonths'
 
 type Tab = 'overview' | 'summary' | 'setup'
 const TAB_ORDER: Tab[] = ['overview', 'summary', 'setup']
@@ -26,12 +27,17 @@ const TAB_ORDER: Tab[] = ['overview', 'summary', 'setup']
 export default function DashboardPage() {
   const { session, signOut }                            = useAuth()
   const { theme, toggle: toggleTheme }                  = useTheme()
-  const { months, loading: monthsLoading, createMonth, resolveActiveMonth } = useMonths()
+  const {
+    months, loading: monthsLoading,
+    createMonth, resetMonth, deleteMonth,
+    resolveActiveMonth,
+  } = useMonths()
 
   const [activeMonthId, setActiveMonthId] = useState<string | null>(null)
   const [createOpen,    setCreateOpen]    = useState(false)
+  const [resetOpen,     setResetOpen]     = useState(false)
+  const [deleteOpen,    setDeleteOpen]    = useState(false)
   const [tab,           setTab]           = useState<Tab>('overview')
-  const [prevTab,       setPrevTab]       = useState<Tab>('overview')
 
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -41,14 +47,14 @@ export default function DashboardPage() {
     addMiscExpense, deleteMiscExpense, addMonthlyExpense,
   } = useMonthData(activeMonthId)
 
-  /* ── Resolve active month on load ─────────────── */
+  /* ── Resolve active month ─────────────────────── */
   useEffect(() => {
     if (months.length > 0 && !activeMonthId) {
       setActiveMonthId(resolveActiveMonth(months))
     }
   }, [months, activeMonthId, resolveActiveMonth])
 
-  /* ── GSAP: stagger cards on mount ─────────────── */
+  /* ── GSAP: stagger on mount ───────────────────── */
   useEffect(() => {
     if (monthsLoading) return
     const ctx = gsap.context(() => {
@@ -63,19 +69,12 @@ export default function DashboardPage() {
   /* ── GSAP: tab slide transition ───────────────── */
   const switchTab = useCallback((next: Tab) => {
     if (next === tab) return
-    const fromIdx = TAB_ORDER.indexOf(tab)
-    const toIdx   = TAB_ORDER.indexOf(next)
-    const dir     = toIdx > fromIdx ? 1 : -1   // 1 = slide left, -1 = slide right
-
-    setPrevTab(tab)
+    const dir = TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(tab) ? 1 : -1
 
     if (!contentRef.current) { setTab(next); return }
 
     gsap.to(contentRef.current, {
-      x: dir * -28,
-      opacity: 0,
-      duration: 0.16,
-      ease: 'power2.in',
+      x: dir * -28, opacity: 0, duration: 0.16, ease: 'power2.in',
       onComplete: () => {
         setTab(next)
         gsap.fromTo(
@@ -87,29 +86,45 @@ export default function DashboardPage() {
     })
   }, [tab])
 
-  /* ── Create month handler ─────────────────────── */
+  /* ── Create month ─────────────────────────────── */
   async function handleCreateMonth(year: number, month: number, overrides: IncomeOverride[]) {
     const newMonth = await createMonth(year, month, overrides)
     if (newMonth) setActiveMonthId(newMonth.id)
   }
 
+  /* ── Reset month ──────────────────────────────── */
+  async function handleResetMonth(withNewTemplate: boolean) {
+    if (!activeMonthId) return
+    await resetMonth(activeMonthId, withNewTemplate)
+    setActiveMonthId(null)
+    setTimeout(() => setActiveMonthId(activeMonthId), 0)
+  }
+
+  /* ── Delete month ─────────────────────────────── */
+  async function handleDeleteMonth() {
+    if (!activeMonthId) return
+    await deleteMonth(activeMonthId)
+    // Resolve to next available month after deletion
+    const remaining = months.filter(m => m.id !== activeMonthId)
+    setActiveMonthId(remaining.length > 0 ? remaining[0].id : null)
+  }
+
   if (!session) return null
 
+  const activeMonth   = months.find(m => m.id === activeMonthId) ?? null
   const { year: cy, month: cm } = getCurrentYearMonth()
   const currentMonthMissing = !monthsLoading && months.length > 0
     && !months.some(m => m.year === cy && m.month === cm)
-
   const isLoading = monthsLoading || dataLoading
 
   const tabConfig = [
     { id: 'overview' as Tab, label: 'Overview',  Icon: LayoutDashboard },
-    { id: 'summary'  as Tab, label: 'Summary',   Icon: BarChart2        },
-    { id: 'setup'    as Tab, label: 'Setup',      Icon: Settings         },
+    { id: 'summary'  as Tab, label: 'Summary',   Icon: BarChart2       },
+    { id: 'setup'    as Tab, label: 'Setup',      Icon: Settings        },
   ]
 
   return (
     <div className="min-h-screen bg-bg">
-      {/* Subtle grid */}
       <div className="fixed inset-0 pointer-events-none auth-grid opacity-20" />
 
       {/* ── Topbar ──────────────────────────────────────────────── */}
@@ -124,9 +139,9 @@ export default function DashboardPage() {
                 style={{ background: 'oklch(from var(--brand) l c h / 0.1)' }}
               >
                 🏠
-                <span className="absolute -top-px -left-px w-1.5 h-1.5 border-t border-l border-brand/50" />
+                <span className="absolute -top-px -left-px  w-1.5 h-1.5 border-t border-l border-brand/50" />
                 <span className="absolute -top-px -right-px w-1.5 h-1.5 border-t border-r border-brand/50" />
-                <span className="absolute -bottom-px -left-px w-1.5 h-1.5 border-b border-l border-brand/50" />
+                <span className="absolute -bottom-px -left-px  w-1.5 h-1.5 border-b border-l border-brand/50" />
                 <span className="absolute -bottom-px -right-px w-1.5 h-1.5 border-b border-r border-brand/50" />
               </div>
               <span className="text-[0.75rem] font-bold text-text tracking-[0.1em] uppercase hidden sm:block">
@@ -134,20 +149,20 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            {/* Month nav — only on overview tab */}
             {tab === 'overview' && months.length > 0 && (
               <MonthNav
                 months={months}
                 activeMonthId={activeMonthId}
                 onSelect={setActiveMonthId}
                 onCreateMonth={() => setCreateOpen(true)}
+                onResetMonth={() => setResetOpen(true)}
+                onDeleteMonth={() => setDeleteOpen(true)}
               />
             )}
           </div>
 
-          {/* Right: tabs + theme toggle + sign out */}
+          {/* Right: tabs + theme + sign out */}
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            {/* Tab switcher */}
             {tabConfig.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -166,22 +181,18 @@ export default function DashboardPage() {
 
             <div className="w-px h-4 bg-border mx-1.5" />
 
-            {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay transition-colors border border-transparent hover:border-border"
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay border border-transparent hover:border-border transition-colors"
             >
-              {theme === 'dark'
-                ? <Sun  className="w-3.5 h-3.5" />
-                : <Moon className="w-3.5 h-3.5" />}
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Sign out */}
             <button
               onClick={signOut}
-              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-expense hover:bg-expense-dim transition-colors border border-transparent hover:border-expense/25"
               title="Sign out"
+              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-expense hover:bg-expense-dim border border-transparent hover:border-expense/25 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -189,16 +200,13 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Main content ──────────────────────────────────────────── */}
+      {/* ── Main ──────────────────────────────────────────────────── */}
       <main className="relative max-w-5xl mx-auto px-4 py-6 overflow-hidden">
         <div ref={contentRef}>
 
-          {/* ══════════════════════════════════════════
-              OVERVIEW TAB
-              ══════════════════════════════════════════ */}
+          {/* ── Overview ────────────────────────────────────────── */}
           {tab === 'overview' && (
             <>
-              {/* No months state */}
               {!monthsLoading && months.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-32 gap-6">
                   <div
@@ -214,7 +222,7 @@ export default function DashboardPage() {
                   <div className="text-center max-w-xs">
                     <p className="text-base font-bold text-text uppercase tracking-widest">No months yet</p>
                     <p className="text-sm text-text-muted mt-2 leading-relaxed">
-                      Start by going to{' '}
+                      Go to{' '}
                       <button onClick={() => switchTab('setup')} className="text-brand underline underline-offset-2">
                         Setup
                       </button>{' '}
@@ -230,14 +238,11 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Current month missing banner */}
               {currentMonthMissing && (
                 <div className="dash-card mb-4 flex items-center justify-between gap-3 bg-[oklch(from_var(--brand)_l_c_h_/_0.06)] border border-brand/20 px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <AlertTriangle className="w-4 h-4 text-brand flex-shrink-0" />
-                    <p className="text-sm text-text">
-                      No budget created for this month yet.
-                    </p>
+                    <p className="text-sm text-text">No budget created for this month yet.</p>
                   </div>
                   <button
                     onClick={() => setCreateOpen(true)}
@@ -248,16 +253,12 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Dashboard content */}
               {months.length > 0 && activeMonthId && (
                 <div className="space-y-4">
-
-                  {/* Summary bar */}
                   <div className="dash-card">
                     <SummaryBar summary={summary} loading={isLoading} />
                   </div>
 
-                  {/* Pending variable bills banner */}
                   {summary.pendingBills > 0 && !isLoading && (
                     <div className="dash-card flex items-center gap-2.5 bg-pending-dim border border-pending/25 px-4 py-3">
                       <AlertTriangle className="w-4 h-4 text-pending flex-shrink-0" />
@@ -270,15 +271,10 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* 2-column grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-4">
-                      <div className="dash-card">
-                        <IncomeSection month={month} income={income} onUpdate={updateIncome} />
-                      </div>
-                      <div className="dash-card">
-                        <BillsSection bills={bills} onUpdate={updateBill} />
-                      </div>
+                      <div className="dash-card"><IncomeSection month={month} income={income} onUpdate={updateIncome} /></div>
+                      <div className="dash-card"><BillsSection bills={bills} onUpdate={updateBill} /></div>
                     </div>
                     <div className="space-y-4">
                       <div className="dash-card">
@@ -303,9 +299,7 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* ══════════════════════════════════════════
-              SUMMARY TAB
-              ══════════════════════════════════════════ */}
+          {/* ── Summary ─────────────────────────────────────────── */}
           {tab === 'summary' && (
             <div>
               <div className="mb-5">
@@ -318,16 +312,14 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════
-              SETUP TAB
-              ══════════════════════════════════════════ */}
+          {/* ── Setup ───────────────────────────────────────────── */}
           {tab === 'setup' && (
             <div>
               <div className="mb-5">
                 <h2 className="text-[0.75rem] font-bold text-text uppercase tracking-[0.15em]">Setup</h2>
                 <p className="text-[0.78rem] text-text-muted mt-1">
                   Manage income sources, bill templates, and expense templates.
-                  Changes apply to new months only — past months are never affected.
+                  Changes apply to new months only.
                 </p>
               </div>
               <SettingsPanel />
@@ -337,11 +329,26 @@ export default function DashboardPage() {
         </div>
       </main>
 
+      {/* ── Modals ──────────────────────────────────────────────── */}
       <CreateMonthModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreate={handleCreateMonth}
         existing={months.map(m => ({ year: m.year, month: m.month }))}
+      />
+
+      <ResetMonthModal
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        monthLabel={activeMonth?.label ?? ''}
+        onReset={handleResetMonth}
+      />
+
+      <DeleteMonthModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        monthLabel={activeMonth?.label ?? ''}
+        onDelete={handleDeleteMonth}
       />
     </div>
   )

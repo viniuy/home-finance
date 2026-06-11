@@ -1,17 +1,34 @@
 'use client'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronLeft, ChevronRight, Plus, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react'
 import type { Month } from '@/types/types'
 
 interface MonthNavProps {
-  months:        Month[]
-  activeMonthId: string | null
-  onSelect:      (id: string) => void
-  onCreateMonth: () => void
+  months:         Month[]
+  activeMonthId:  string | null
+  onSelect:       (id: string) => void
+  onCreateMonth:  () => void
+  onResetMonth:   () => void
+  onDeleteMonth:  () => void
 }
 
-export function MonthNav({ months, activeMonthId, onSelect, onCreateMonth }: MonthNavProps) {
-  const idx    = months.findIndex(m => m.id === activeMonthId)
-  const active = months[idx]
+export function MonthNav({
+  months, activeMonthId, onSelect, onCreateMonth, onResetMonth, onDeleteMonth,
+}: MonthNavProps) {
+  const idx        = months.findIndex(m => m.id === activeMonthId)
+  const active     = months[idx]
+  const [open, setOpen] = useState(false)
+  const menuRef    = useRef<HTMLDivElement>(null)
+
+  /* Close on outside click */
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   return (
     <div className="flex items-center gap-2">
@@ -48,6 +65,48 @@ export function MonthNav({ months, activeMonthId, onSelect, onCreateMonth }: Mon
         <Plus className="w-3 h-3" />
         <span className="hidden sm:block">New</span>
       </button>
+
+      {/* ⋯ actions dropdown */}
+      {active && (
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setOpen(v => !v)}
+            className={`
+              h-8 w-8 flex items-center justify-center border transition-colors
+              ${open
+                ? 'border-brand/40 bg-[oklch(from_var(--brand)_l_c_h_/_0.07)] text-brand'
+                : 'border-border text-text-faint hover:text-text hover:bg-bg-overlay hover:border-border'}
+            `}
+            aria-label="Month actions"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+
+          {open && (
+            <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-48 bg-bg-raised border border-border shadow-modal overflow-hidden">
+              {/* Corner accents */}
+              <span className="absolute top-0 left-0  w-2 h-2 border-t border-l border-brand/30" />
+              <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-brand/30" />
+
+              <button
+                onClick={() => { setOpen(false); onResetMonth() }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-[0.75rem] text-text-muted hover:text-text hover:bg-bg-overlay transition-colors border-b border-border"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-pending flex-shrink-0" />
+                <span>Reset month</span>
+              </button>
+
+              <button
+                onClick={() => { setOpen(false); onDeleteMonth() }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-[0.75rem] text-text-muted hover:text-expense hover:bg-expense-dim transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-expense flex-shrink-0" />
+                <span>Delete month</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
