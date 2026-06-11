@@ -1,99 +1,62 @@
 'use client'
-
-import { useState } from 'react'
-import { MonthlyIncome } from '@/types'
+import { Card, CardHeader, CardTitle } from '@/components/ui/Primitives'
+import { InlineEdit } from '@/components/ui/InlineEdit'
 import { formatPeso } from '@/lib/utils'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { PencilIcon, CheckIcon, XIcon } from 'lucide-react'
+import type { Month, MonthlyIncome } from '@/types/types'
 
 interface IncomeSectionProps {
-  monthlyIncome: MonthlyIncome[]
+  month:    Month | null
+  income:   MonthlyIncome[]
   onUpdate: (id: string, amount: number) => Promise<void>
 }
 
-interface IncomeRowProps {
-  item: MonthlyIncome
-  onUpdate: (id: string, amount: number) => Promise<void>
-}
-
-function IncomeRow({ item, onUpdate }: IncomeRowProps) {
-  const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(String(item.amount))
-  const [saving, setSaving] = useState(false)
-
-  async function handleSave() {
-    const parsed = parseFloat(value)
-    if (isNaN(parsed)) return
-    setSaving(true)
-    await onUpdate(item.id, parsed)
-    setSaving(false)
-    setEditing(false)
-  }
-
-  function handleCancel() {
-    setValue(String(item.amount))
-    setEditing(false)
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-sm text-muted-foreground">
-        {item.income_sources?.name ?? 'Unknown'}
-      </span>
-      {editing ? (
-        <div className="flex items-center gap-1">
-          <Input
-            className="h-7 w-32 text-right tabular-nums text-sm"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            type="number"
-            min={0}
-            autoFocus
-          />
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave} disabled={saving}>
-            <CheckIcon className="h-3.5 w-3.5 text-green-600" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancel}>
-            <XIcon className="h-3.5 w-3.5 text-destructive" />
-          </Button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-semibold tabular-nums">{formatPeso(item.amount)}</span>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)}>
-            <PencilIcon className="h-3 w-3 text-muted-foreground" />
-          </Button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-export function IncomeSection({ monthlyIncome, onUpdate }: IncomeSectionProps) {
-  const total = monthlyIncome.reduce((sum, i) => sum + i.amount, 0)
+export function IncomeSection({ month, income, onUpdate }: IncomeSectionProps) {
+  const base     = income.reduce((s, r) => s + r.amount, 0)
+  const rollover = month?.rollover_amount ?? 0
+  const total    = base + rollover
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">Income Sources</CardTitle>
+      <CardHeader>
+        <CardTitle>Income</CardTitle>
+        <span className="text-xs font-mono font-bold text-income tabular-nums">
+          {formatPeso(total)}
+        </span>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {monthlyIncome.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No income sources set for this month.</p>
-        ) : (
-          monthlyIncome.map((item) => (
-            <IncomeRow key={item.id} item={item} onUpdate={onUpdate} />
-          ))
-        )}
-        {monthlyIncome.length > 0 && (
-          <div className="pt-2 border-t flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Total</span>
-            <span className="font-bold tabular-nums">{formatPeso(total)}</span>
+
+      <div className="divide-y divide-border/40">
+        {income.map(row => (
+          <div
+            key={row.id}
+            className="flex items-center justify-between px-5 py-3 hover:bg-bg-overlay/50 transition-colors group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-[3px] h-4 bg-income/30 flex-shrink-0 group-hover:bg-income/70 transition-colors" />
+              <span className="text-sm text-text truncate">{row.name}</span>
+            </div>
+            <InlineEdit value={row.amount} onSave={v => onUpdate(row.id, v)} />
+          </div>
+        ))}
+
+        {rollover > 0 && (
+          <div className="flex items-center justify-between px-5 py-3 bg-income-dim/40">
+            <div className="flex items-center gap-2.5">
+              <span className="w-[3px] h-4 bg-income/50 flex-shrink-0" />
+              <span className="text-sm text-income font-medium">Rolled-over savings</span>
+              <span className="text-[0.6rem] font-bold text-income bg-income-dim border border-income/20 px-1.5 py-0.5 uppercase tracking-widest">
+                Prev
+              </span>
+            </div>
+            <span className="text-sm font-mono text-income tabular-nums">{formatPeso(rollover)}</span>
           </div>
         )}
-      </CardContent>
+
+        {income.length === 0 && (
+          <p className="px-5 py-8 text-xs text-text-faint text-center">
+            No income sources. Add them in Setup.
+          </p>
+        )}
+      </div>
     </Card>
   )
 }
