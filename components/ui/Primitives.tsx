@@ -2,11 +2,14 @@ import { cn } from '@/lib/utils'
 import { forwardRef, useEffect } from 'react'
 import { X, ChevronDown } from 'lucide-react'
 
+// ── Shared radius class (0 on dark/light, 0.625rem on sakura) ─
+const R = 'rounded-[var(--radius)]'
+
 // ── Card ──────────────────────────────────────────────────────
 export function Card({ className, children, ...p }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('bg-bg-raised border border-border shadow-card overflow-hidden', className)}
+      className={cn(`bg-bg-raised border border-border shadow-card overflow-hidden ${R}`, className)}
       {...p}
     >
       {children}
@@ -64,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full h-10 bg-bg-overlay border border-border-light text-sm text-text',
+              `w-full h-10 bg-bg-overlay border border-border-light text-sm text-text ${R}`,
               'placeholder:text-text-faint outline-none transition-all duration-150',
               'focus:border-brand focus:ring-1 focus:ring-brand/15 focus:bg-bg-raised',
               'hover:border-border',
@@ -75,10 +78,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...p}
           />
         </div>
-        {error && <p className="text-[0.72rem] text-expense flex items-center gap-1.5">
-          <span className="w-3 h-3 inline-flex items-center justify-center border border-expense/40 text-[8px] flex-shrink-0">!</span>
-          {error}
-        </p>}
+        {error && (
+          <p className="text-[0.72rem] text-expense flex items-center gap-1.5">
+            <span className="w-3 h-3 inline-flex items-center justify-center border border-expense/40 text-[8px] flex-shrink-0 rounded-sm">!</span>
+            {error}
+          </p>
+        )}
         {hint && !error && <p className="text-[0.72rem] text-text-faint">{hint}</p>}
       </div>
     )
@@ -108,7 +113,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              'w-full h-10 bg-bg-overlay border border-border-light text-sm text-text',
+              `w-full h-10 bg-bg-overlay border border-border-light text-sm text-text ${R}`,
               'pl-3.5 pr-9 outline-none appearance-none transition-all duration-150 cursor-pointer',
               'focus:border-brand focus:ring-1 focus:ring-brand/15',
               'hover:border-border',
@@ -132,12 +137,12 @@ Select.displayName = 'Select'
 
 // ── Modal ─────────────────────────────────────────────────────
 interface ModalProps {
-  open:     boolean
-  onClose:  () => void
-  title:    string
+  open:      boolean
+  onClose:   () => void
+  title:     string
   subtitle?: string
-  children: React.ReactNode
-  size?:    'sm' | 'md' | 'lg'
+  children:  React.ReactNode
+  size?:     'sm' | 'md' | 'lg'
 }
 
 export function Modal({ open, onClose, title, subtitle, children, size = 'md' }: ModalProps) {
@@ -152,27 +157,24 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md' }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-[3px]"
         style={{ animation: 'fadeIn 0.15s ease-out' }}
         onClick={onClose}
       />
-      {/* Panel */}
       <div
         className={cn(
-          'relative w-full bg-bg-raised border border-border shadow-modal',
+          `relative w-full bg-bg-raised border border-border shadow-modal ${R}`,
           size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-xl' : 'max-w-md'
         )}
         style={{ animation: 'modalIn 0.2s cubic-bezier(0.16,1,0.3,1)' }}
       >
-        {/* Corner accents */}
-        <span className="absolute top-0    left-0  w-3 h-3 border-t-2 border-l-2 border-brand/40" />
-        <span className="absolute top-0    right-0 w-3 h-3 border-t-2 border-r-2 border-brand/40" />
-        <span className="absolute bottom-0 left-0  w-3 h-3 border-b-2 border-l-2 border-brand/40" />
-        <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brand/40" />
+        {/* Corner accents — visible only when radius is 0 (dark/light) */}
+        <span className="absolute top-0    left-0  w-3 h-3 border-t-2 border-l-2 border-brand/40 rounded-tl-[var(--radius)]" />
+        <span className="absolute top-0    right-0 w-3 h-3 border-t-2 border-r-2 border-brand/40 rounded-tr-[var(--radius)]" />
+        <span className="absolute bottom-0 left-0  w-3 h-3 border-b-2 border-l-2 border-brand/40 rounded-bl-[var(--radius)]" />
+        <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brand/40 rounded-br-[var(--radius)]" />
 
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <h2 className="text-[0.75rem] font-bold text-text uppercase tracking-[0.1em]">{title}</h2>
@@ -180,7 +182,7 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md' }:
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay transition-colors border border-transparent hover:border-border"
+            className={`w-7 h-7 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay transition-colors border border-transparent hover:border-border ${R}`}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -192,7 +194,7 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md' }:
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes modalIn {
           from { opacity: 0; transform: translateY(8px) scale(0.98) }
-          to   { opacity: 1; transform: translateY(0)    scale(1)    }
+          to   { opacity: 1; transform: translateY(0) scale(1) }
         }
       `}</style>
     </div>
@@ -201,9 +203,9 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md' }:
 
 // ── Toggle ────────────────────────────────────────────────────
 interface ToggleProps {
-  checked:     boolean
-  onChange:    (v: boolean) => void
-  label?:      string
+  checked:      boolean
+  onChange:     (v: boolean) => void
+  label?:       string
   description?: string
 }
 
@@ -221,7 +223,7 @@ export function Toggle({ checked, onChange, label, description }: ToggleProps) {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative flex-shrink-0 w-10 h-[1.375rem] transition-colors duration-200',
+          'relative flex-shrink-0 w-10 h-[1.375rem] rounded-full transition-colors duration-200',
           checked ? 'bg-brand' : 'bg-border-light'
         )}
       >

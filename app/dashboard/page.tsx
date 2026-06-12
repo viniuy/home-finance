@@ -6,7 +6,8 @@ import gsap from 'gsap'
 import { useAuth } from '@/hooks/UserAuth'
 import { useMonths } from '@/hooks/UseMonths'
 import { useMonthData } from '@/hooks/useMonthData'
-import { useTheme } from '@/components/ThemeProvider'
+import { ThemePicker } from '@/components/ThemeProvider'
+import { Calculator } from '@/components/dashboard/Calculator'
 import { getCurrentYearMonth } from '@/lib/utils'
 import { SummaryBar }             from '@/components/dashboard/SummaryBar'
 import { MonthNav }               from '@/components/dashboard/MonthNav'
@@ -26,7 +27,7 @@ const TAB_ORDER: Tab[] = ['overview', 'summary', 'setup']
 
 export default function DashboardPage() {
   const { session, signOut }                            = useAuth()
-  const { theme, toggle: toggleTheme }                  = useTheme()
+
   const {
     months, loading: monthsLoading,
     createMonth, resetMonth, deleteMonth,
@@ -56,7 +57,9 @@ export default function DashboardPage() {
 
   /* ── GSAP: stagger on mount ───────────────────── */
   useEffect(() => {
-    if (monthsLoading) return
+    if (monthsLoading || !activeMonthId) return
+    const cards = document.querySelectorAll('.dash-card')
+    if (!cards.length) return
     const ctx = gsap.context(() => {
       gsap.from('.dash-card', {
         y: 18, opacity: 0, duration: 0.4,
@@ -64,7 +67,7 @@ export default function DashboardPage() {
       })
     })
     return () => ctx.revert()
-  }, [monthsLoading])
+  }, [monthsLoading, activeMonthId])
 
   /* ── GSAP: tab slide transition ───────────────── */
   const switchTab = useCallback((next: Tab) => {
@@ -181,13 +184,7 @@ export default function DashboardPage() {
 
             <div className="w-px h-4 bg-border mx-1.5" />
 
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
-              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay border border-transparent hover:border-border transition-colors"
-            >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
+            <ThemePicker />
 
             <button
               onClick={signOut}
@@ -350,6 +347,7 @@ export default function DashboardPage() {
         monthLabel={activeMonth?.label ?? ''}
         onDelete={handleDeleteMonth}
       />
+      <Calculator />
     </div>
   )
 }
