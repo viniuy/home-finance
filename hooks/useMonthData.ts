@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import type {
   Month, MonthlyIncome, MonthlyBill,
@@ -53,7 +53,49 @@ export function useMonthData(monthId: string | null): MonthData & {
   const [miscExpenses,    setMiscExpenses]    = useState<MiscExpense[]>([])
   const [loading,         setLoading]         = useState(false)
 
-  const fetch = useCallback(async () => {
+  // Track active channel so we can clean it up on monthId change
+  const channelRef = useRef<ReturnType<ReturnType<typeof getSupabase>['channel']> | null>(null)
+
+  // ── Individual refetch helpers (called by realtime handlers) ──
+
+  const fetchIncome = useCallback(async () => {
+    if (!monthId) return
+    const { data } = await getSupabase()
+      .from('monthly_income').select('*').eq('month_id', monthId).order('sort_order')
+    if (data) setIncome(data)
+  }, [monthId])
+
+  const fetchBills = useCallback(async () => {
+    if (!monthId) return
+    const { data } = await getSupabase()
+      .from('monthly_bills').select('*').eq('month_id', monthId).order('sort_order')
+    if (data) setBills(data)
+  }, [monthId])
+
+  const fetchMonthlyExpenses = useCallback(async () => {
+    if (!monthId) return
+    const { data } = await getSupabase()
+      .from('monthly_expenses').select('*').eq('month_id', monthId).order('sort_order')
+    if (data) setMonthlyExpenses(data)
+  }, [monthId])
+
+  const fetchMiscExpenses = useCallback(async () => {
+    if (!monthId) return
+    const { data } = await getSupabase()
+      .from('misc_expenses').select('*').eq('month_id', monthId).order('created_at')
+    if (data) setMiscExpenses(data)
+  }, [monthId])
+
+  const fetchMonth = useCallback(async () => {
+    if (!monthId) return
+    const { data } = await getSupabase()
+      .from('months').select('*').eq('id', monthId).single()
+    if (data) setMonth(data)
+  }, [monthId])
+
+  // ── Full fetch (initial load) ────────────────────────────────
+
+  const fetchAll = useCallback(async () => {
     if (!monthId) return
     setLoading(true)
     const sb = getSupabase()
@@ -72,17 +114,71 @@ export function useMonthData(monthId: string | null): MonthData & {
     setLoading(false)
   }, [monthId])
 
-  // ── Mutations ───────────────────────────────────────────────
+  // ── Realtime subscription ────────────────────────────────────
+
+  useEffect(() => {
+    if (!monthId) return
+
+    fetchAll()
+
+    // Tear down previous channel before creating a new one
+    if (channelRef.current) {
+      getSupabase().removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
+    const channel = getSupabase()
+      .channel(`month-data-${monthId}`)
+      // monthly_income
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'monthly_income', filter: `month_id=eq.${monthId}` },
+        () => fetchIncome(),
+      )
+      // monthly_bills
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'monthly_bills', filter: `month_id=eq.${monthId}` },
+        () => fetchBills(),
+      )
+      // monthly_expenses
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'monthly_expenses', filter: `month_id=eq.${monthId}` },
+        () => fetchMonthlyExpenses(),
+      )
+      // misc_expenses
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'misc_expenses', filter: `month_id=eq.${monthId}` },
+        () => fetchMiscExpenses(),
+      )
+      // months (for rollover_amount changes)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'months', filter: `id=eq.${monthId}` },
+        () => fetchMonth(),
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      getSupabase().removeChannel(channel)
+      channelRef.current = null
+    }
+  }, [monthId, fetchAll, fetchIncome, fetchBills, fetchMonthlyExpenses, fetchMiscExpenses, fetchMonth])
+
+  // ── Mutations ────────────────────────────────────────────────
+  // No manual re-fetch needed — realtime events handle state updates
 
   async function updateIncome(id: string, amount: number) {
     await getSupabase().from('monthly_income').update({ amount }).eq('id', id)
-    await fetch()
   }
 
   async function updateBill(id: string, amount: number) {
     // Flip is_updated to true — removes the "pending" warning badge
     await getSupabase().from('monthly_bills').update({ amount, is_updated: true }).eq('id', id)
-    await fetch()
   }
 
   async function logExpense(id: string, amount: number) {
@@ -90,7 +186,6 @@ export function useMonthData(monthId: string | null): MonthData & {
       .from('monthly_expenses')
       .update({ amount, logged_at: new Date().toISOString() })
       .eq('id', id)
-    await fetch()
   }
 
   async function clearExpense(id: string) {
@@ -99,18 +194,15 @@ export function useMonthData(monthId: string | null): MonthData & {
       .from('monthly_expenses')
       .update({ amount: null, logged_at: null })
       .eq('id', id)
-    await fetch()
   }
 
   async function addMiscExpense(name: string, amount: number) {
     if (!monthId) return
     await getSupabase().from('misc_expenses').insert({ month_id: monthId, name, amount })
-    await fetch()
   }
 
   async function deleteMiscExpense(id: string) {
     await getSupabase().from('misc_expenses').delete().eq('id', id)
-    await fetch()
   }
 
   // Add a one-off monthly expense row for this month only (not a template)
@@ -125,10 +217,7 @@ export function useMonthData(monthId: string | null): MonthData & {
       logged_at:   null,
       sort_order:  maxOrder + 1,
     })
-    await fetch()
   }
-
-  useEffect(() => { fetch() }, [fetch])
 
   const summary = computeSummary(month, income, bills, monthlyExpenses, miscExpenses)
 

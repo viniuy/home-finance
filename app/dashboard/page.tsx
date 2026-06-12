@@ -7,7 +7,8 @@ import { useAuth } from '@/hooks/UserAuth'
 import { useMonths } from '@/hooks/UseMonths'
 import { useMonthData } from '@/hooks/useMonthData'
 import { ThemePicker } from '@/components/ThemeProvider'
-import { Calculator } from '@/components/dashboard/Calculator'
+import { Calculator }          from '@/components/dashboard/Calculator'
+import { RealtimeIndicator }  from '@/components/dashboard/RealtimeIndicator'
 import { getCurrentYearMonth } from '@/lib/utils'
 import { SummaryBar }             from '@/components/dashboard/SummaryBar'
 import { MonthNav }               from '@/components/dashboard/MonthNav'
@@ -181,6 +182,10 @@ export default function DashboardPage() {
                 <span className="hidden sm:block">{label}</span>
               </button>
             ))}
+
+            <div className="w-px h-4 bg-border mx-1.5" />
+
+            <RealtimeIndicator />
 
             <div className="w-px h-4 bg-border mx-1.5" />
 

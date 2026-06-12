@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getMonthLabel, getCurrentYearMonth } from '@/lib/utils'
 import type { Month, Settings } from '@/types/types'
@@ -14,6 +14,8 @@ export interface IncomeOverride {
 export function useMonths() {
   const [months,  setMonths]  = useState<Month[]>([])
   const [loading, setLoading] = useState(true)
+
+  const channelRef = useRef<ReturnType<ReturnType<typeof getSupabase>['channel']> | null>(null)
 
   const fetchMonths = useCallback(async () => {
     const { data } = await getSupabase()
@@ -31,6 +33,38 @@ export function useMonths() {
     const current = list.find(m => m.year === year && m.month === month)
     return current ? current.id : list[0].id
   }
+
+  // ── Realtime: subscribe to months table for INSERT / DELETE ──
+
+  useEffect(() => {
+    fetchMonths()
+
+    if (channelRef.current) {
+      getSupabase().removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
+    const channel = getSupabase()
+      .channel('months-list')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'months' },
+        () => fetchMonths(),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'months' },
+        () => fetchMonths(),
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      getSupabase().removeChannel(channel)
+      channelRef.current = null
+    }
+  }, [fetchMonths])
 
   /* ── Create ──────────────────────────────────── */
   async function createMonth(
@@ -117,16 +151,11 @@ export function useMonths() {
       )
     }
 
-    await fetchMonths()
+    // fetchMonths() will be triggered automatically by the INSERT realtime event
     return newMonth
   }
 
   /* ── Reset ───────────────────────────────────── */
-  /**
-   * plain reset    → clear all amounts but keep the same rows
-   * withNewTemplate→ plain reset + re-sync rows from current active templates
-   *                  (adds missing, removes rows whose template is now inactive)
-   */
   async function resetMonth(monthId: string, withNewTemplate: boolean): Promise<void> {
     const sb = getSupabase()
 
@@ -154,7 +183,6 @@ export function useMonths() {
       const existingTemplateIds = new Set((currentBills ?? []).map((b: any) => b.template_id))
       const activeTemplateIds   = new Set((activeTemplates ?? []).map((t: any) => t.id))
 
-      // Add bills for newly active templates
       const toAddBills = (activeTemplates ?? []).filter((t: any) => !existingTemplateIds.has(t.id))
       if (toAddBills.length > 0) {
         await sb.from('monthly_bills').insert(
@@ -170,7 +198,6 @@ export function useMonths() {
         )
       }
 
-      // Remove bills whose template is no longer active
       const toRemoveBills = (currentBills ?? []).filter((b: any) =>
         b.template_id && !activeTemplateIds.has(b.template_id)
       )
@@ -201,7 +228,6 @@ export function useMonths() {
         )
       }
 
-      // Remove expense rows whose template is now inactive (only template-linked ones)
       const toRemoveExps = (currentExps ?? []).filter((e: any) =>
         e.template_id && !activeExpTemplateIds.has(e.template_id)
       )
@@ -224,10 +250,8 @@ export function useMonths() {
     ])
 
     await sb.from('months').delete().eq('id', monthId)
-    await fetchMonths()
+    // fetchMonths() will be triggered automatically by the DELETE realtime event
   }
-
-  useEffect(() => { fetchMonths() }, [fetchMonths])
 
   return {
     months, loading,
