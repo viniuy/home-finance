@@ -251,13 +251,13 @@
   /* ── Brand ────────────────────────────────────── */
   --brand: oklch(0.58 0.22 355);
 
-  /* ── Semantic ─────────────────────────────────── */
-  --income:      oklch(0.44 0.115 152);
-  --income-dim:  oklch(0.94 0.022 152);
-  --expense:     oklch(0.555 0.225 27.3);
-  --expense-dim: oklch(0.974 0.016 27.3);
-  --pending:     oklch(0.62 0.148 65);
-  --pending-dim: oklch(0.974 0.02 65);
+  /* ── Semantic — pink scale (income = light blush, expense = deep rose) */
+  --income:      oklch(0.72 0.10 355);
+  --income-dim:  oklch(0.95 0.03 355);
+  --expense:     oklch(0.36 0.18 345);
+  --expense-dim: oklch(0.93 0.04 350);
+  --pending:     oklch(0.55 0.15 350);
+  --pending-dim: oklch(0.94 0.035 352);
 
   /* ── Shadows — pink-tinted ────────────────────── */
   --shadow-card-val:  0 1px 4px oklch(0.58 0.22 355 / 0.12),
@@ -299,8 +299,13 @@
     animation: scan 1.2s ease-in-out infinite;
   }
 
-  .auth-grid {
-    background-image:
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pb-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    background-image: 
       linear-gradient(var(--border-light) 1px, transparent 1px),
       linear-gradient(90deg, var(--border-light) 1px, transparent 1px);
     background-size: 48px 48px;

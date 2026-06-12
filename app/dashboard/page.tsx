@@ -1,14 +1,17 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Settings, LogOut, BarChart2, LayoutDashboard, Sun, Moon, AlertTriangle } from 'lucide-react'
+import { Settings, LogOut, BarChart2, LayoutDashboard, Sun, Moon, AlertTriangle, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
 import gsap from 'gsap'
-import { useAuth } from '@/hooks/UserAuth'
-import { useMonths } from '@/hooks/UseMonths'
-import { useMonthData } from '@/hooks/useMonthData'
-import { ThemePicker } from '@/components/ThemeProvider'
-import { Calculator }          from '@/components/dashboard/Calculator'
-import { RealtimeIndicator }  from '@/components/dashboard/RealtimeIndicator'
+import { useAuth }          from '@/hooks/UserAuth'
+import { useMonths }        from '@/hooks/UseMonths'
+import { useMonthData }     from '@/hooks/useMonthData'
+import { ThemePicker }      from '@/components/ThemeProvider'
+import { Calculator }       from '@/components/dashboard/Calculator'
+import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator'
+import { MobileSidebar }    from '@/components/dashboard/MobileSidebar'
+import { BottomNav }        from '@/components/dashboard/BottomNav'
+import type { MobileSection } from '@/components/dashboard/BottomNav'
 import { getCurrentYearMonth } from '@/lib/utils'
 import { SummaryBar }             from '@/components/dashboard/SummaryBar'
 import { MonthNav }               from '@/components/dashboard/MonthNav'
@@ -23,11 +26,11 @@ import { SettingsPanel }          from '@/components/dashboard/SettingsPanel'
 import { SummaryTab }             from '@/components/dashboard/SummaryTab'
 import type { IncomeOverride }    from '@/hooks/UseMonths'
 
-type Tab = 'overview' | 'summary' | 'setup'
+export type Tab = 'overview' | 'summary' | 'setup'
 const TAB_ORDER: Tab[] = ['overview', 'summary', 'setup']
 
 export default function DashboardPage() {
-  const { session, signOut }                            = useAuth()
+  const { session, signOut } = useAuth()
 
   const {
     months, loading: monthsLoading,
@@ -35,11 +38,13 @@ export default function DashboardPage() {
     resolveActiveMonth,
   } = useMonths()
 
-  const [activeMonthId, setActiveMonthId] = useState<string | null>(null)
-  const [createOpen,    setCreateOpen]    = useState(false)
-  const [resetOpen,     setResetOpen]     = useState(false)
-  const [deleteOpen,    setDeleteOpen]    = useState(false)
-  const [tab,           setTab]           = useState<Tab>('overview')
+  const [activeMonthId,  setActiveMonthId]  = useState<string | null>(null)
+  const [createOpen,     setCreateOpen]     = useState(false)
+  const [resetOpen,      setResetOpen]      = useState(false)
+  const [deleteOpen,     setDeleteOpen]     = useState(false)
+  const [tab,            setTab]            = useState<Tab>('overview')
+  const [sidebarOpen,    setSidebarOpen]    = useState(false)
+  const [mobileSection,  setMobileSection]  = useState<MobileSection>('income')
 
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -59,8 +64,6 @@ export default function DashboardPage() {
   /* ── GSAP: stagger on mount ───────────────────── */
   useEffect(() => {
     if (monthsLoading || !activeMonthId) return
-    const cards = document.querySelectorAll('.dash-card')
-    if (!cards.length) return
     const ctx = gsap.context(() => {
       gsap.from('.dash-card', {
         y: 18, opacity: 0, duration: 0.4,
@@ -74,9 +77,7 @@ export default function DashboardPage() {
   const switchTab = useCallback((next: Tab) => {
     if (next === tab) return
     const dir = TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(tab) ? 1 : -1
-
     if (!contentRef.current) { setTab(next); return }
-
     gsap.to(contentRef.current, {
       x: dir * -28, opacity: 0, duration: 0.16, ease: 'power2.in',
       onComplete: () => {
@@ -90,13 +91,12 @@ export default function DashboardPage() {
     })
   }, [tab])
 
-  /* ── Create month ─────────────────────────────── */
+  /* ── Month helpers ────────────────────────────── */
   async function handleCreateMonth(year: number, month: number, overrides: IncomeOverride[]) {
     const newMonth = await createMonth(year, month, overrides)
     if (newMonth) setActiveMonthId(newMonth.id)
   }
 
-  /* ── Reset month ──────────────────────────────── */
   async function handleResetMonth(withNewTemplate: boolean) {
     if (!activeMonthId) return
     await resetMonth(activeMonthId, withNewTemplate)
@@ -104,18 +104,16 @@ export default function DashboardPage() {
     setTimeout(() => setActiveMonthId(activeMonthId), 0)
   }
 
-  /* ── Delete month ─────────────────────────────── */
   async function handleDeleteMonth() {
     if (!activeMonthId) return
     await deleteMonth(activeMonthId)
-    // Resolve to next available month after deletion
     const remaining = months.filter(m => m.id !== activeMonthId)
     setActiveMonthId(remaining.length > 0 ? remaining[0].id : null)
   }
 
   if (!session) return null
 
-  const activeMonth   = months.find(m => m.id === activeMonthId) ?? null
+  const activeMonth = months.find(m => m.id === activeMonthId) ?? null
   const { year: cy, month: cm } = getCurrentYearMonth()
   const currentMonthMissing = !monthsLoading && months.length > 0
     && !months.some(m => m.year === cy && m.month === cm)
@@ -127,24 +125,84 @@ export default function DashboardPage() {
     { id: 'setup'    as Tab, label: 'Setup',      Icon: Settings        },
   ]
 
+  // Month index helpers for mobile stepper
+  const idx = months.findIndex(m => m.id === activeMonthId)
+
   return (
     <div className="min-h-screen bg-bg">
       <div className="fixed inset-0 pointer-events-none auth-grid opacity-20" />
+
+      {/* ── Mobile Sidebar ──────────────────────────────────────── */}
+      <MobileSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        tab={tab}
+        onTab={switchTab}
+        onSignOut={signOut}
+      />
 
       {/* ── Topbar ──────────────────────────────────────────────── */}
       <header className="relative z-40 border-b border-border bg-bg-raised/90 backdrop-blur-md sticky top-0">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
-          {/* Left: logo + month nav */}
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <img
-                src="/icons/icon-192.png"
-                alt="Mikay Pay Later"
-                className="w-7 h-7 flex-shrink-0"
-              />
+          {/* ── Mobile topbar ─────────────────────────────────── */}
+          <div className="flex items-center gap-3 lg:hidden min-w-0">
+            {/* Hamburger */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="w-8 h-8 flex items-center justify-center text-text-faint hover:text-text hover:bg-bg-overlay border border-transparent hover:border-border transition-colors flex-shrink-0"
+              aria-label="Open menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+
+            {/* Logo + month label */}
+            <div className="flex items-center gap-2 min-w-0">
+              <img src="/icons/icon-192.png" alt="MPL" className="w-6 h-6 flex-shrink-0" />
+              {activeMonth && (
+                <span className="text-[0.72rem] font-mono font-semibold text-text truncate">
+                  {activeMonth.label}
+                </span>
+              )}
             </div>
- 
+          </div>
+
+          {/* Mobile: compact month stepper (right side) */}
+          {tab === 'overview' && months.length > 0 && (
+            <div className="flex items-center gap-1 lg:hidden flex-shrink-0">
+              <button
+                onClick={() => idx < months.length - 1 && setActiveMonthId(months[idx + 1].id)}
+                disabled={idx >= months.length - 1}
+                className="w-8 h-8 flex items-center justify-center border border-border text-text-faint hover:text-text hover:bg-bg-raised disabled:opacity-20 transition-colors"
+                aria-label="Previous month"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => idx > 0 && setActiveMonthId(months[idx - 1].id)}
+                disabled={idx <= 0}
+                className="w-8 h-8 flex items-center justify-center border border-border text-text-faint hover:text-text hover:bg-bg-raised disabled:opacity-20 transition-colors"
+                aria-label="Next month"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="w-8 h-8 flex items-center justify-center border border-border text-text-faint hover:text-text hover:bg-bg-overlay transition-colors text-xs font-bold"
+                aria-label="Month actions"
+              >
+                ⋯
+              </button>
+            </div>
+          )}
+
+          {/* ── Desktop topbar ────────────────────────────────── */}
+          {/* Left: logo + month nav */}
+          <div className="hidden lg:flex items-center gap-4 min-w-0">
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <img src="/icons/icon-192.png" alt="MPL" className="w-7 h-7 flex-shrink-0" />
+            </div>
+
             {tab === 'overview' && months.length > 0 && (
               <MonthNav
                 months={months}
@@ -157,8 +215,8 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Right: tabs + theme + sign out */}
-          <div className="flex items-center gap-0.5 flex-shrink-0">
+          {/* Right: tabs + realtime + theme + sign out (desktop only) */}
+          <div className="hidden lg:flex items-center gap-0.5 flex-shrink-0">
             {tabConfig.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -171,16 +229,13 @@ export default function DashboardPage() {
                 `}
               >
                 <Icon className="w-3 h-3" />
-                <span className="hidden sm:block">{label}</span>
+                {label}
               </button>
             ))}
 
             <div className="w-px h-4 bg-border mx-1.5" />
-
             <RealtimeIndicator />
-
             <div className="w-px h-4 bg-border mx-1.5" />
-
             <ThemePicker />
 
             <button
@@ -191,11 +246,16 @@ export default function DashboardPage() {
               <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* Mobile: realtime dot only (far right, overview only) */}
+          <div className="flex lg:hidden items-center flex-shrink-0">
+            <RealtimeIndicator mobileOnly />
+          </div>
         </div>
       </header>
 
       {/* ── Main ──────────────────────────────────────────────────── */}
-      <main className="relative max-w-5xl mx-auto px-4 py-6 overflow-hidden">
+      <main className={`relative max-w-5xl mx-auto px-4 py-6 overflow-hidden ${tab === 'overview' ? 'pb-bottom-nav lg:pb-6' : ''}`}>
         <div ref={contentRef}>
 
           {/* ── Overview ────────────────────────────────────────── */}
@@ -249,8 +309,9 @@ export default function DashboardPage() {
 
               {months.length > 0 && activeMonthId && (
                 <div className="space-y-4">
+                  {/* SummaryBar — always visible on both layouts */}
                   <div className="dash-card">
-                    <SummaryBar summary={summary} loading={isLoading} />
+                    <SummaryBar summary={summary} loading={isLoading} activeSection={mobileSection} />
                   </div>
 
                   {summary.pendingBills > 0 && !isLoading && (
@@ -265,7 +326,8 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* ── Desktop: 2-col grid (unchanged) ──────────── */}
+                  <div className="hidden lg:grid grid-cols-2 gap-4">
                     <div className="space-y-4">
                       <div className="dash-card"><IncomeSection month={month} income={income} onUpdate={updateIncome} /></div>
                       <div className="dash-card"><BillsSection bills={bills} onUpdate={updateBill} /></div>
@@ -287,6 +349,39 @@ export default function DashboardPage() {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* ── Mobile: single active section ─────────────── */}
+                  <div className="lg:hidden">
+                    {mobileSection === 'income' && (
+                      <div className="dash-card">
+                        <IncomeSection month={month} income={income} onUpdate={updateIncome} />
+                      </div>
+                    )}
+                    {mobileSection === 'bills' && (
+                      <div className="dash-card">
+                        <BillsSection bills={bills} onUpdate={updateBill} />
+                      </div>
+                    )}
+                    {mobileSection === 'expenses' && (
+                      <div className="dash-card">
+                        <MonthlyExpensesSection
+                          expenses={monthlyExpenses}
+                          onLog={logExpense}
+                          onClear={clearExpense}
+                          onAddOneOff={addMonthlyExpense}
+                        />
+                      </div>
+                    )}
+                    {mobileSection === 'misc' && (
+                      <div className="dash-card">
+                        <MiscExpensesSection
+                          expenses={miscExpenses}
+                          onAdd={addMiscExpense}
+                          onDelete={deleteMiscExpense}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -323,6 +418,11 @@ export default function DashboardPage() {
         </div>
       </main>
 
+      {/* ── Bottom nav (mobile, overview only) ──────────────────── */}
+      {tab === 'overview' && months.length > 0 && activeMonthId && (
+        <BottomNav active={mobileSection} onChange={setMobileSection} />
+      )}
+
       {/* ── Modals ──────────────────────────────────────────────── */}
       <CreateMonthModal
         open={createOpen}
@@ -330,14 +430,12 @@ export default function DashboardPage() {
         onCreate={handleCreateMonth}
         existing={months.map(m => ({ year: m.year, month: m.month }))}
       />
-
       <ResetMonthModal
         open={resetOpen}
         onClose={() => setResetOpen(false)}
         monthLabel={activeMonth?.label ?? ''}
         onReset={handleResetMonth}
       />
-
       <DeleteMonthModal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
