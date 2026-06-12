@@ -138,21 +138,13 @@ export default function DashboardPage() {
           {/* Left: logo + month nav */}
           <div className="flex items-center gap-4 min-w-0">
             <div className="flex items-center gap-2.5 flex-shrink-0">
-              <div
-                className="w-7 h-7 border border-brand/30 flex items-center justify-center text-sm relative"
-                style={{ background: 'oklch(from var(--brand) l c h / 0.1)' }}
-              >
-                🏠
-                <span className="absolute -top-px -left-px  w-1.5 h-1.5 border-t border-l border-brand/50" />
-                <span className="absolute -top-px -right-px w-1.5 h-1.5 border-t border-r border-brand/50" />
-                <span className="absolute -bottom-px -left-px  w-1.5 h-1.5 border-b border-l border-brand/50" />
-                <span className="absolute -bottom-px -right-px w-1.5 h-1.5 border-b border-r border-brand/50" />
-              </div>
-              <span className="text-[0.75rem] font-bold text-text tracking-[0.1em] uppercase hidden sm:block">
-                Mikay Pay Later
-              </span>
+              <img
+                src="/icons/icon-192.png"
+                alt="Mikay Pay Later"
+                className="w-7 h-7 flex-shrink-0"
+              />
             </div>
-
+ 
             {tab === 'overview' && months.length > 0 && (
               <MonthNav
                 months={months}
