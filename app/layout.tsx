@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     apple: '/icons/icon-192.png',
   },
   verification: {
-    google: 'google-site-verification=NCZ4HAAtXJRyi0WAncOEzx0eUbFnv8_2F1oAO-W5qSE',
+    google: 'google-site-verification=DrhBE9QYf2BMWzeNMipasGeGiFJB-40t81CwaXN783A',
   },
 }
 
