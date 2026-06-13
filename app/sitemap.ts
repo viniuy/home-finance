@@ -3,11 +3,11 @@ import { MetadataRoute } from 'next'
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: 'mikaypaylater.vercel.app',
+      url: 'https://mikaypaylater.vercel.app',
       lastModified: new Date(),
     },
     {
-      url: 'mikaypaylater.vercel.app/dashboard',
+      url: 'https://mikaypaylater.vercel.app/dashboard',
       lastModified: new Date(),
     },
   ]
