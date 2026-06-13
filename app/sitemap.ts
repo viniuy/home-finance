@@ -5,10 +5,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://mikaypaylater.vercel.app',
       lastModified: new Date(),
-    },
-    {
-      url: 'https://mikaypaylater.vercel.app/dashboard',
-      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 1,
     },
   ]
 }
