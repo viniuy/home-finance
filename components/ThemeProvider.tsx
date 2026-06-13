@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { Moon, Sun, Flower2 } from 'lucide-react'
 
-export type Theme = 'dark' | 'light' | 'sakura'
+export type Theme = 'dark' | 'light' | 'sakura' | 'mango'
 
 interface ThemeCtx {
   theme:  Theme
@@ -13,9 +13,10 @@ const ThemeContext = createContext<ThemeCtx>({ theme: 'dark', setTheme: () => {}
 
 function apply(t: Theme) {
   const root = document.documentElement
-  root.classList.remove('dark', 'sakura')
+  root.classList.remove('dark', 'sakura', 'mango')
   if (t === 'dark')   root.classList.add('dark')
   if (t === 'sakura') root.classList.add('sakura')
+  if (t === 'mango') root.classList.add('mango')
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -48,9 +49,16 @@ const THEMES: { id: Theme; label: string; Icon: React.ElementType; swatch: strin
   { id: 'dark',   label: 'Dark',   Icon: Moon,    swatch: 'oklch(0.148 0.004 228.8)' },
   { id: 'light',  label: 'Light',  Icon: Sun,     swatch: 'oklch(0.98 0.002 214.3)'  },
   { id: 'sakura', label: 'Sakura', Icon: Flower2, swatch: 'oklch(0.62 0.18 350)'     },
+  { id: 'mango', label: 'Mango', Icon: Sun, swatch: 'oklch(0.68 0.19 58)' }
 ]
 
-export function ThemePicker() {
+export function ThemePicker({
+  dropdownAlign = 'right',
+  dropdownSide  = 'bottom',
+}: {
+  dropdownAlign?: 'left' | 'right'
+  dropdownSide?:  'top'  | 'bottom'
+}) {
   const { theme, setTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -83,7 +91,11 @@ export function ThemePicker() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-36 bg-bg-raised border border-border shadow-modal overflow-hidden">
+        <div className={`
+          absolute z-50 w-36 bg-bg-raised border border-border shadow-modal overflow-hidden
+          ${dropdownAlign === 'left' ? 'left-0' : 'right-0'}
+          ${dropdownSide  === 'top'  ? 'bottom-[calc(100%+4px)]' : 'top-[calc(100%+4px)]'}
+        `}>
           <span className="absolute top-0 left-0  w-2 h-2 border-t border-l border-brand/30" />
           <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-brand/30" />
 
@@ -112,4 +124,11 @@ export function ThemePicker() {
 }
 
 /* Anti-flash script — paste into layout <head> */
-export const themeScript = `(function(){var t=localStorage.getItem('kasa-theme')||'dark';var r=document.documentElement;r.classList.remove('dark','sakura');if(t==='dark')r.classList.add('dark');if(t==='sakura')r.classList.add('sakura')})()`
+export const themeScript = `(function(){
+  var t=localStorage.getItem('kasa-theme')||'dark';
+  var r=document.documentElement;
+  r.classList.remove('dark','sakura','mango');
+  if(t==='dark')   r.classList.add('dark');
+  if(t==='sakura') r.classList.add('sakura');
+  if(t==='mango')  r.classList.add('mango');
+})()`

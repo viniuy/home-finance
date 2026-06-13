@@ -267,6 +267,74 @@
 }
 
 /* ════════════════════════════════════════════════
+   MANGO THEME  🥭  (warm amber + golden yellow)
+   Add the class "mango" to <html> to activate.
+   ════════════════════════════════════════════════ */
+.mango {
+  --background:            oklch(0.97 0.025 75);
+  --foreground:            oklch(0.18 0.055 55);
+  --card:                  oklch(0.995 0.008 75);
+  --card-foreground:       oklch(0.18 0.055 55);
+  --popover:               oklch(0.995 0.008 75);
+  --popover-foreground:    oklch(0.18 0.055 55);
+  --primary:               oklch(0.68 0.19 58);
+  --primary-foreground:    oklch(1 0 0);
+  --secondary:             oklch(0.93 0.055 75);
+  --secondary-foreground:  oklch(0.22 0.05 55);
+  --muted:                 oklch(0.94 0.04 72);
+  --muted-foreground:      oklch(0.48 0.06 60);
+  --accent:                oklch(0.93 0.055 75);
+  --accent-foreground:     oklch(0.22 0.05 55);
+  --destructive:           oklch(0.577 0.245 27.325);
+  --border:                oklch(0.87 0.07 70);
+  --input:                 oklch(0.87 0.07 70);
+  --ring:                  oklch(0.72 0.16 62);
+  --radius:                0.5rem;
+
+  --chart-1: oklch(0.68 0.19 58);
+  --chart-2: oklch(0.48 0.115 152);
+  --chart-3: oklch(0.577 0.245 27.325);
+  --chart-4: oklch(0.55 0.17 35);
+  --chart-5: oklch(0.52 0.06 65);
+
+  --sidebar:                    oklch(0.955 0.032 72);
+  --sidebar-foreground:         oklch(0.18 0.055 55);
+  --sidebar-primary:            oklch(0.68 0.19 58);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent:             oklch(0.93 0.055 75);
+  --sidebar-accent-foreground:  oklch(0.22 0.05 55);
+  --sidebar-border:             oklch(0.87 0.07 70);
+  --sidebar-ring:               oklch(0.72 0.16 62);
+
+  /* ── Surface ──────────────────────────────────── */
+  --bg:           oklch(0.97 0.025 75);
+  --bg-raised:    oklch(0.995 0.008 75);
+  --bg-overlay:   oklch(0.945 0.048 72);
+  --text:         oklch(0.18 0.055 55);
+  --text-muted:   oklch(0.44 0.07 58);
+  --text-faint:   oklch(0.64 0.045 65);
+  --border-light: oklch(0.88 0.055 70);
+
+  /* ── Brand — mango amber ──────────────────────── */
+  --brand: oklch(0.68 0.19 58);
+
+  /* ── Semantic — amber scale ───────────────────── */
+  /* income = golden yellow, expense = deep burnt orange */
+  --income:      oklch(0.74 0.14 85);
+  --income-dim:  oklch(0.95 0.04 85);
+  --expense:     oklch(0.62 0.16 58);
+  --expense-dim: oklch(0.94 0.04 50);
+  --pending:     oklch(0.62 0.16 58);
+  --pending-dim: oklch(0.95 0.04 65);
+
+  /* ── Shadows with amber tint ──────────────────── */
+  --shadow-card-val:  0 1px 4px oklch(0.68 0.19 58 / 0.12),
+                      0 2px 12px oklch(0.68 0.19 58 / 0.09);
+  --shadow-modal-val: 0 8px 36px oklch(0.68 0.19 58 / 0.22),
+                      0 2px 10px oklch(0.68 0.19 58 / 0.12);
+}
+
+/* ════════════════════════════════════════════════
    BASE
    ════════════════════════════════════════════════ */
 @layer base {

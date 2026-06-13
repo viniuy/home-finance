@@ -21,6 +21,7 @@ export function SettingsPanel() {
   const [billName,   setBillName]   = useState('')
   const [billAmt,    setBillAmt]    = useState('')
   const [billVar,    setBillVar]    = useState(false)
+  const [billDueDay, setBillDueDay] = useState('')
   const [billSaving, setBillSaving] = useState(false)
   const [billNameErr,setBillNameErr]= useState('')
   const [billAmtErr, setBillAmtErr] = useState('')
@@ -42,13 +43,13 @@ export function SettingsPanel() {
   async function handleAddBill() {
     setBillNameErr(''); setBillAmtErr('')
     if (!billName.trim()) { setBillNameErr('Required'); return }
-    // Variable bills store default_amount = 0 — no input needed
     const amount = billVar ? 0 : parseFloat(billAmt)
     if (!billVar && (isNaN(amount) || amount < 0)) { setBillAmtErr('Enter a valid amount'); return }
+    const dueDay = billDueDay ? parseInt(billDueDay) : null
     setBillSaving(true)
-    await addBillTemplate(billName.trim(), amount, billVar)
+    await addBillTemplate(billName.trim(), amount, billVar, dueDay)
     setBillSaving(false)
-    setBillName(''); setBillAmt(''); setBillVar(false); setBillModal(false)
+    setBillName(''); setBillAmt(''); setBillVar(false); setBillDueDay(''); setBillModal(false)
   }
 
   async function handleAddIncome() {
@@ -184,6 +185,15 @@ export function SettingsPanel() {
               Variable bills start at ₱0 each month and show a <span className="text-pending font-bold">UPD</span> badge until you log the actual amount.
             </p>
           )}
+
+          <Input
+            label="Due Day (optional)"
+            type="number"
+            placeholder="e.g. 15"
+            value={billDueDay}
+            onChange={e => setBillDueDay(e.target.value)}
+            hint="Day of the month this bill is due (1–31). Leave blank if no fixed due date."
+          />
 
           <div className="flex gap-2 pt-1">
             <Button variant="secondary" className="flex-1" onClick={() => setBillModal(false)}>Cancel</Button>

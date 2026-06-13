@@ -235,7 +235,7 @@ export function Calculator() {
       {isOpen && (
         <div
           ref={panelRef}
-          className="fixed bottom-20 right-5 z-50 w-72 bg-bg-raised border border-border shadow-modal overflow-hidden rounded-[var(--radius)]"
+          className="fixed bottom-36 right-4 lg:bottom-20 lg:right-5 z-50 w-72 bg-bg-raised border border-border shadow-modal overflow-hidden rounded-[var(--radius)]"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-bg-overlay/50">
@@ -290,7 +290,7 @@ export function Calculator() {
         ref={fabRef}
         onClick={isOpen ? handleClose : setOpen}
         className={`
-          fixed bottom-5 right-5 z-50 w-12 h-12 flex items-center justify-center
+          fixed bottom-20 right-4 lg:bottom-5 lg:right-5 z-50 w-12 h-12 flex items-center justify-center
           border shadow-modal transition-all duration-200
           rounded-[var(--radius)]
           ${isOpen

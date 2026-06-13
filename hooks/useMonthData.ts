@@ -40,6 +40,7 @@ function computeSummary(
 export function useMonthData(monthId: string | null): MonthData & {
   updateIncome:         (id: string, amount: number) => Promise<void>
   updateBill:           (id: string, amount: number) => Promise<void>
+  togglePaid:           (id: string, isPaid: boolean) => Promise<void>
   logExpense:           (id: string, amount: number) => Promise<void>
   clearExpense:         (id: string) => Promise<void>
   addMiscExpense:       (name: string, amount: number) => Promise<void>
@@ -206,6 +207,13 @@ export function useMonthData(monthId: string | null): MonthData & {
   }
 
   // Add a one-off monthly expense row for this month only (not a template)
+  async function togglePaid(id: string, isPaid: boolean) {
+    // Guard: can't pay an unconfirmed variable bill — enforced at DB level too
+    const bill = bills.find(b => b.id === id)
+    if (!bill || (isPaid && !bill.is_updated)) return
+    await getSupabase().from('monthly_bills').update({ is_paid: isPaid }).eq('id', id)
+  }
+
   async function addMonthlyExpense(name: string) {
     if (!monthId) return
     const maxOrder = monthlyExpenses.reduce((m, e) => Math.max(m, e.sort_order), 0)
@@ -224,6 +232,6 @@ export function useMonthData(monthId: string | null): MonthData & {
   return {
     month, income, bills, monthlyExpenses, miscExpenses, summary, loading,
     updateIncome, updateBill, logExpense, clearExpense,
-    addMiscExpense, deleteMiscExpense, addMonthlyExpense,
+    addMiscExpense, deleteMiscExpense, addMonthlyExpense, togglePaid,
   }
 }

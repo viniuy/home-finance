@@ -39,9 +39,9 @@ export function useTemplates() {
   }
 
   // ── Bill Templates ──────────────────────────────────────────
-  async function addBillTemplate(name: string, default_amount: number, is_variable: boolean) {
+  async function addBillTemplate(name: string, default_amount: number, is_variable: boolean, due_day: number | null = null) {
     const maxOrder = billTemplates.reduce((m, b) => Math.max(m, b.sort_order), 0)
-    await getSupabase().from('bill_templates').insert({ name, default_amount, is_variable, is_active: true, sort_order: maxOrder + 1 })
+    await getSupabase().from('bill_templates').insert({ name, default_amount, is_variable, is_active: true, sort_order: maxOrder + 1, due_day })
     await fetch()
   }
   async function updateBillTemplate(id: string, data: Partial<Pick<BillTemplate, 'name' | 'default_amount' | 'is_variable' | 'is_active'>>) {

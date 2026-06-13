@@ -64,20 +64,20 @@ export function MonthlyExpensesSection({ expenses, onLog, onClear, onAddOneOff }
           )}
 
           {unlogged.map(exp => (
-            <div key={exp.id} className="flex items-center justify-between px-5 py-3 opacity-35 hover:opacity-60 transition-opacity group">
-              <div className="flex items-center gap-2.5">
-                <span className="w-[3px] h-4 bg-border flex-shrink-0" />
-                <span className="text-sm text-text-muted">{exp.name}</span>
+            <div key={exp.id} className="flex items-center justify-between px-5 py-3 hover:bg-bg-overlay/50 transition-colors group border-l-2 border-brand/40">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-[3px] h-4 bg-brand/50 flex-shrink-0 group-hover:bg-brand transition-colors" />
+                <span className="text-sm text-text truncate">{exp.name}</span>
               </div>
               <InlineEdit value={null} onSave={v => onLog(exp.id, v)} placeholder="Log amount" />
             </div>
           ))}
 
           {logged.map(exp => (
-            <div key={exp.id} className="flex items-center justify-between px-5 py-3 hover:bg-bg-overlay/50 transition-colors group">
-              <div className="flex items-center gap-2.5">
-                <span className="w-[3px] h-4 bg-expense/30 flex-shrink-0 group-hover:bg-expense/60 transition-colors" />
-                <span className="text-sm text-text">{exp.name}</span>
+            <div key={exp.id} className="flex items-center justify-between px-5 py-3 hover:bg-bg-overlay/50 transition-colors group opacity-45 hover:opacity-70">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-[3px] h-4 bg-income/30 flex-shrink-0 group-hover:bg-income/60 transition-colors" />
+                <span className="text-sm text-text-muted line-through truncate">{exp.name}</span>
               </div>
               <div className="flex items-center gap-0.5">
                 <InlineEdit value={exp.amount} onSave={v => onLog(exp.id, v)} />

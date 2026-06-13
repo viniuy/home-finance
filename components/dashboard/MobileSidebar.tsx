@@ -90,7 +90,7 @@ export function MobileSidebar({ open, onClose, tab, onTab, onSignOut }: MobileSi
 
         {/* Bottom: theme + logout */}
         <div className="px-4 py-4 border-t border-border flex items-center justify-between flex-shrink-0">
-          <ThemePicker />
+          <ThemePicker dropdownAlign="left" dropdownSide="top" />
           <button
             onClick={onSignOut}
             className="flex items-center gap-2 px-3 py-2 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-text-faint hover:text-expense hover:bg-expense-dim border border-transparent hover:border-expense/25 transition-colors rounded-[var(--radius)]"

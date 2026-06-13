@@ -50,7 +50,7 @@ export default function DashboardPage() {
 
   const {
     month, income, bills, monthlyExpenses, miscExpenses, summary, loading: dataLoading,
-    updateIncome, updateBill, logExpense, clearExpense,
+    updateIncome, updateBill, togglePaid, logExpense, clearExpense,
     addMiscExpense, deleteMiscExpense, addMonthlyExpense,
   } = useMonthData(activeMonthId)
 
@@ -330,7 +330,7 @@ export default function DashboardPage() {
                   <div className="hidden lg:grid grid-cols-2 gap-4">
                     <div className="space-y-4">
                       <div className="dash-card"><IncomeSection month={month} income={income} onUpdate={updateIncome} /></div>
-                      <div className="dash-card"><BillsSection bills={bills} onUpdate={updateBill} /></div>
+                      <div className="dash-card"><BillsSection bills={bills} onUpdate={updateBill} onTogglePaid={togglePaid} /></div>
                     </div>
                     <div className="space-y-4">
                       <div className="dash-card">
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                     )}
                     {mobileSection === 'bills' && (
                       <div className="dash-card">
-                        <BillsSection bills={bills} onUpdate={updateBill} />
+                        <BillsSection bills={bills} onUpdate={updateBill} onTogglePaid={togglePaid} />
                       </div>
                     )}
                     {mobileSection === 'expenses' && (

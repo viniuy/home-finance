@@ -124,13 +124,15 @@ export function useMonths() {
       .from('bill_templates').select('*').eq('is_active', true).order('sort_order')
     if (bills && bills.length > 0) {
       await sb.from('monthly_bills').insert(
-        bills.map((b : { id: string, name: string, default_amount: number, is_variable: boolean, sort_order: number }) => ({
+        bills.map((b : { id: string, name: string, default_amount: number, is_variable: boolean, sort_order: number, due_day: number | null }) => ({
           month_id:    newMonth.id,
           template_id: b.id,
           name:        b.name,
           amount:      b.default_amount,
           is_variable: b.is_variable,
           is_updated:  !b.is_variable,
+          is_paid:     false,
+          due_day:     b.due_day ?? null,
           sort_order:  b.sort_order,
         }))
       )
