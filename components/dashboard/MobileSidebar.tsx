@@ -1,28 +1,28 @@
 'use client'
 import { useEffect, useRef } from 'react'
-import { LayoutDashboard, BarChart2, Settings, X } from 'lucide-react'
-import { LogOut } from 'lucide-react'
+import { LayoutDashboard, BarChart2, Settings, X, LogOut, ShoppingCart } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemeProvider'
 import type { Tab } from '@/app/dashboard/page'
 
 interface MobileSidebarProps {
-  open:     boolean
-  onClose:  () => void
-  tab:      Tab
-  onTab:    (t: Tab) => void
-  onSignOut: () => void
+  open:             boolean
+  onClose:          () => void
+  tab:              Tab
+  onTab:            (t: Tab) => void
+  onSignOut:        () => void
+  hasGrocerySession?: boolean
 }
 
-const NAV = [
-  { id: 'overview' as Tab, label: 'Overview',  Icon: LayoutDashboard },
-  { id: 'summary'  as Tab, label: 'Summary',   Icon: BarChart2       },
-  { id: 'setup'    as Tab, label: 'Setup',      Icon: Settings        },
+const NAV: { id: Tab; label: string; Icon: React.ElementType }[] = [
+  { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
+  { id: 'summary',  label: 'Summary',  Icon: BarChart2       },
+  { id: 'grocery',  label: 'Grocery',  Icon: ShoppingCart    },
+  { id: 'setup',    label: 'Setup',    Icon: Settings        },
 ]
 
-export function MobileSidebar({ open, onClose, tab, onTab, onSignOut }: MobileSidebarProps) {
+export function MobileSidebar({ open, onClose, tab, onTab, onSignOut, hasGrocerySession }: MobileSidebarProps) {
   const sidebarRef = useRef<HTMLDivElement>(null)
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     function handler(e: MouseEvent) {
@@ -32,7 +32,6 @@ export function MobileSidebar({ open, onClose, tab, onTab, onSignOut }: MobileSi
     return () => document.removeEventListener('mousedown', handler)
   }, [open, onClose])
 
-  // Lock body scroll when open
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
@@ -76,7 +75,7 @@ export function MobileSidebar({ open, onClose, tab, onTab, onSignOut }: MobileSi
               key={id}
               onClick={() => { onTab(id); onClose() }}
               className={`
-                w-full flex items-center gap-3 px-3 py-2.5 text-[0.75rem] font-bold uppercase tracking-[0.08em] transition-colors rounded-[var(--radius)]
+                w-full flex items-center gap-3 px-3 py-2.5 text-[0.75rem] font-bold uppercase tracking-[0.08em] transition-colors rounded-[var(--radius)] relative
                 ${tab === id
                   ? 'bg-bg-overlay text-text border border-border'
                   : 'text-text-faint hover:text-text hover:bg-bg-overlay/60 border border-transparent'}
@@ -84,6 +83,10 @@ export function MobileSidebar({ open, onClose, tab, onTab, onSignOut }: MobileSi
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               {label}
+              {/* Active grocery session indicator */}
+              {id === 'grocery' && hasGrocerySession && (
+                <span className="ml-auto w-2 h-2 rounded-full bg-brand flex-shrink-0" />
+              )}
             </button>
           ))}
         </nav>
