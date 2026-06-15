@@ -8,8 +8,12 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 
 export const metadata: Metadata = {
   title: 'Mikay Pay Later',
-  description: 'Family Home Finance Tracker',
+  description: 'Family Home Finance Tracker — private access only.',
   manifest: '/manifest.json',
+  robots: {
+    index: true,
+    follow: true,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

@@ -3,6 +3,15 @@ import { useState, useEffect, useRef } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import gsap from 'gsap'
 import { useAuth } from '@/hooks/UserAuth'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Mikay Pay Later',
+  description: 'Private home finance tracker for the Dizon family.',
+  robots: {
+    index: false, 
+  },
+}
 
 type AuthPhase = 'idle' | 'authenticating' | 'success' | 'error'
 
