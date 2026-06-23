@@ -239,9 +239,6 @@ export default function DashboardPage() {
           <div className="hidden lg:flex items-center gap-4 min-w-0">
             <div className="flex items-center gap-2.5 flex-shrink-0">
               <img src="/icons/icon-192.png" alt="MPL" className="w-7 h-7 flex-shrink-0" />
-              <span className="text-[0.75rem] font-bold text-text tracking-[0.1em] uppercase">
-                Mikay Pay Later
-              </span>
             </div>
             {tab === 'overview' && months.length > 0 && (
               <MonthNav
